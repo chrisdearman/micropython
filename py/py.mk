@@ -15,6 +15,7 @@ PY_O_BASENAME = \
 	mpstate.o \
 	nlrx86.o \
 	nlrx64.o \
+	nlrmips32.o \
 	nlrthumb.o \
 	nlrxtensa.o \
 	nlrsetjmp.o \
@@ -37,6 +38,8 @@ PY_O_BASENAME = \
 	emitnx64.o \
 	asmx86.o \
 	emitnx86.o \
+	asmmips32.o \
+	emitnmips32.o \
 	asmthumb.o \
 	emitnthumb.o \
 	emitinlinethumb.o \
@@ -148,6 +151,10 @@ $(PY_BUILD)/emitnx64.o: py/emitnative.c
 
 $(PY_BUILD)/emitnx86.o: CFLAGS += -DN_X86
 $(PY_BUILD)/emitnx86.o: py/emitnative.c
+	$(call compile_c)
+
+$(PY_BUILD)/emitnmips32.o: CFLAGS += -DN_MIPS32
+$(PY_BUILD)/emitnmips32.o: py/emitnative.c
 	$(call compile_c)
 
 $(PY_BUILD)/emitnthumb.o: CFLAGS += -DN_THUMB

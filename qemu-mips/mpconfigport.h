@@ -4,6 +4,7 @@
 
 #define MICROPY_ALLOC_PATH_MAX      (512)
 #define MICROPY_EMIT_X64            (0)
+#define MICROPY_EMIT_MIPS32         (1)
 #define MICROPY_EMIT_THUMB          (0)
 #define MICROPY_EMIT_INLINE_THUMB   (0)
 #define MICROPY_MEM_STATS           (0)

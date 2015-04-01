@@ -49,6 +49,8 @@ struct _nlr_buf_t {
   #else
     void *regs[8];
   #endif
+#elif defined(__mips__)
+    void *regs[11];
 #elif defined(__thumb2__) || defined(__thumb__) || defined(__arm__)
     void *regs[10];
 #elif defined(__xtensa__)

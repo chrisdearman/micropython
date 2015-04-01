@@ -59,6 +59,7 @@
 // wrapper around everything in this file
 #if (MICROPY_EMIT_X64 && N_X64) \
     || (MICROPY_EMIT_X86 && N_X86) \
+    || (MICROPY_EMIT_MIPS32 && N_MIPS32) \
     || (MICROPY_EMIT_THUMB && N_THUMB) \
     || (MICROPY_EMIT_ARM && N_ARM)
 
@@ -276,6 +277,83 @@ STATIC byte mp_f_n_args[MP_F_NUMBER_OF] = {
 #define ASM_STORE_REG_REG(as, reg_src, reg_base) asm_x86_mov_r32_to_mem32((as), (reg_src), (reg_base), 0)
 #define ASM_STORE8_REG_REG(as, reg_src, reg_base) asm_x86_mov_r8_to_mem8((as), (reg_src), (reg_base), 0)
 #define ASM_STORE16_REG_REG(as, reg_src, reg_base) asm_x86_mov_r16_to_mem16((as), (reg_src), (reg_base), 0)
+
+#elif N_MIPS32
+
+// MIPS32 specific stuff
+
+#include "py/asmmips32.h"
+
+#define EXPORT_FUN(name) emit_native_mips32_##name
+
+#define REG_RET   ASM_MIPS32_REG_V0
+#define REG_ARG_1 ASM_MIPS32_REG_A0
+#define REG_ARG_2 ASM_MIPS32_REG_A1
+#define REG_ARG_3 ASM_MIPS32_REG_A2
+#define REG_ARG_4 ASM_MIPS32_REG_A3
+
+// caller saved
+#define REG_TEMP0 ASM_MIPS32_REG_T0
+#define REG_TEMP1 ASM_MIPS32_REG_T1
+#define REG_TEMP2 ASM_MIPS32_REG_T2
+
+// callee saved
+#define REG_LOCAL_1 ASM_MIPS32_REG_S0
+#define REG_LOCAL_2 ASM_MIPS32_REG_S1
+#define REG_LOCAL_3 ASM_MIPS32_REG_S2
+#define REG_LOCAL_NUM (3)
+
+#define REG_FNTAB ASM_MIPS32_REG_S7
+
+#define ASM_PASS_COMPUTE    ASM_MIPS32_PASS_COMPUTE
+#define ASM_PASS_EMIT       ASM_MIPS32_PASS_EMIT
+
+#define ASM_T               asm_mips32_t
+#define ASM_NEW             asm_mips32_new
+#define ASM_FREE            asm_mips32_free
+#define ASM_GET_CODE        asm_mips32_get_code
+#define ASM_GET_CODE_SIZE   asm_mips32_get_code_size
+#define ASM_START_PASS      asm_mips32_start_pass
+#define ASM_END_PASS        asm_mips32_end_pass
+#define ASM_ENTRY           asm_mips32_entry
+#define ASM_EXIT            asm_mips32_exit
+
+#define ASM_MARK(as, imm)   asm_mips32_li(as, ASM_MIPS32_REG_ZERO, imm);
+#define ASM_LABEL_ASSIGN    asm_mips32_label_assign
+#define ASM_JUMP            asm_mips32_b_label
+#define ASM_JUMP_IF_REG_ZERO asm_mips32_beqz_label
+#define ASM_JUMP_IF_REG_NONZERO asm_mips32_bnez_label
+#define ASM_JUMP_IF_REG_EQ asm_mips32_beq_label
+#define ASM_CALL_IND(as, ptr, idx)              \
+        asm_mips32_call_ind(as, ptr, idx, REG_FNTAB, ASM_MIPS32_REG_AT)
+
+#define ASM_MOV_REG_TO_LOCAL asm_mips32_mov_reg_to_local
+#define ASM_MOV_IMM_TO_REG(as, imm, reg) asm_mips32_li(as, (reg), (imm))
+#define ASM_MOV_ALIGNED_IMM_TO_REG(as, imm, reg) asm_mips32_li(as, (reg), (imm))
+#define ASM_MOV_IMM_TO_LOCAL_USING(as, imm, local_num, reg_temp) \
+    do { \
+        asm_mips32_li(as, (reg_temp), (imm)); \
+        ASM_MOV_REG_TO_LOCAL(as, (reg_temp), local_num);  \
+    } while (false)
+#define ASM_MOV_LOCAL_TO_REG asm_mips32_mov_local_to_reg
+#define ASM_MOV_REG_REG asm_mips32_move
+#define ASM_MOV_LOCAL_ADDR_TO_REG(as, local_num, reg) asm_mips32_mov_local_addr_to_reg(as, local_num, reg)
+
+#define ASM_LSL_REG_REG(as, reg_dest, reg_shift) asm_mips32_sllv((as), (reg_dest), (reg_dest), (reg_shift))
+#define ASM_ASR_REG_REG(as, reg_dest, reg_shift) asm_mips32_srav((as), (reg_dest), (reg_dest), (reg_shift))
+#define ASM_OR_REG_REG(as, reg_dest, reg_src) asm_mips32_or((as), (reg_dest), (reg_dest), (reg_src))
+#define ASM_XOR_REG_REG(as, reg_dest, reg_src) asm_mips32_xor((as), (reg_dest), (reg_dest), (reg_src))
+#define ASM_AND_REG_REG(as, reg_dest, reg_src) asm_mips32_and((as), (reg_dest), (reg_dest), (reg_src))
+#define ASM_ADD_REG_REG(as, reg_dest, reg_src) asm_mips32_addu((as), (reg_dest), (reg_dest), (reg_src))
+#define ASM_SUB_REG_REG(as, reg_dest, reg_src) asm_mips32_subu((as), (reg_dest), (reg_dest), (reg_src))
+
+#define ASM_LOAD_REG_REG(as, reg_dest, reg_base) asm_mips32_lw((as), (reg_dest), 0, (reg_base))
+#define ASM_LOAD8_REG_REG(as, reg_dest, reg_base) asm_mips32_lb((as), (reg_dest), 0, (reg_base))
+#define ASM_LOAD16_REG_REG(as, reg_dest, reg_base) asm_mips32_lh((as), (reg_dest), 0, (reg_base))
+
+#define ASM_STORE_REG_REG(as, reg_value, reg_base) asm_mips32_sw((as), (reg_value), 0, (reg_base))
+#define ASM_STORE8_REG_REG(as, reg_value, reg_base) asm_mips32_sb((as), (reg_value), 0, (reg_base))
+#define ASM_STORE16_REG_REG(as, reg_value, reg_base) asm_mips32_sh((as), (reg_value), 0, (reg_base))
 
 #elif N_THUMB
 
@@ -630,6 +708,23 @@ STATIC void emit_native_start_pass(emit_t *emit, pass_kind_t pass, scope_t *scop
             asm_x86_mov_r32_to_local(emit->as, REG_TEMP0, i - REG_LOCAL_NUM);
         }
     }
+#elif N_MIPS32
+    for (int i = 0; i < scope->num_pos_args; i++) {
+        if (i == 0) {
+            ASM_MOV_REG_REG(emit->as, REG_LOCAL_1, REG_ARG_1);
+        } else if (i == 1) {
+            ASM_MOV_REG_REG(emit->as, REG_LOCAL_2, REG_ARG_2);
+        } else if (i == 2) {
+            ASM_MOV_REG_REG(emit->as, REG_LOCAL_3, REG_ARG_3);
+        } else if (i == 3) {
+            ASM_MOV_REG_TO_LOCAL(emit->as, i - REG_LOCAL_NUM, REG_ARG_4);
+        } else {
+            // TODO not implemented
+            assert(0);
+        }
+    }
+    // TODO: don't load REG_FNTAB for LEAF functions
+    asm_mips32_li(emit->as, REG_FNTAB, (mp_uint_t)mp_fun_table);
 #elif N_THUMB
     for (int i = 0; i < scope->num_pos_args; i++) {
         if (i == 0) {
@@ -1194,6 +1289,18 @@ STATIC void emit_native_load_fast(emit_t *emit, qstr qst, mp_uint_t local_num) {
         asm_x86_mov_local_to_r32(emit->as, local_num - REG_LOCAL_NUM, REG_TEMP0);
         emit_post_push_reg(emit, vtype, REG_TEMP0);
     }
+#elif N_MIPS32
+    if (local_num == 0) {
+        emit_post_push_reg(emit, vtype, REG_LOCAL_1);
+    } else if (local_num == 1) {
+        emit_post_push_reg(emit, vtype, REG_LOCAL_2);
+    } else if (local_num == 2) {
+        emit_post_push_reg(emit, vtype, REG_LOCAL_3);
+    } else {
+        need_reg_single(emit, REG_TEMP0, 0);
+        ASM_MOV_LOCAL_TO_REG(emit->as, local_num - REG_LOCAL_NUM, REG_TEMP0);
+        emit_post_push_reg(emit, vtype, REG_TEMP0);
+    }
 #elif N_THUMB
     if (local_num == 0) {
         emit_post_push_reg(emit, vtype, REG_LOCAL_1);
@@ -1406,6 +1513,17 @@ STATIC void emit_native_store_fast(emit_t *emit, qstr qst, mp_uint_t local_num) 
     } else {
         emit_pre_pop_reg(emit, &vtype, REG_TEMP0);
         asm_x86_mov_r32_to_local(emit->as, REG_TEMP0, local_num - REG_LOCAL_NUM);
+    }
+#elif N_MIPS32
+    if (local_num == 0) {
+        emit_pre_pop_reg(emit, &vtype, REG_LOCAL_1);
+    } else if (local_num == 1) {
+        emit_pre_pop_reg(emit, &vtype, REG_LOCAL_2);
+    } else if (local_num == 2) {
+        emit_pre_pop_reg(emit, &vtype, REG_LOCAL_3);
+    } else {
+        emit_pre_pop_reg(emit, &vtype, REG_TEMP0);
+        ASM_MOV_REG_TO_LOCAL(emit->as, REG_TEMP0, local_num - REG_LOCAL_NUM);
     }
 #elif N_THUMB
     if (local_num == 0) {
@@ -1949,6 +2067,16 @@ STATIC void emit_native_binary_op(emit_t *emit, mp_binary_op_t op) {
                 ASM_X86_CC_JNE,
             };
             asm_x86_setcc_r8(emit->as, ops[op - MP_BINARY_OP_LESS], REG_RET);
+            #elif N_MIPS32
+            static uint ccs[6] = {
+                ASM_MIPS_SLT,
+                ASM_MIPS_SGT,
+                ASM_MIPS_SEQ,
+                ASM_MIPS_SLE,
+                ASM_MIPS_SGE,
+                ASM_MIPS_SNE,
+            };
+            asm_mips32_compare(emit->as, REG_RET, REG_ARG_2, reg_rhs, ccs[op - MP_BINARY_OP_LESS]);
             #elif N_THUMB
             asm_thumb_cmp_rlo_rlo(emit->as, REG_ARG_2, reg_rhs);
             static uint16_t ops[6] = {

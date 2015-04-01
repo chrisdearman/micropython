@@ -144,6 +144,11 @@
 #define MICROPY_EMIT_X86 (0)
 #endif
 
+// Whether to emit mips32 native code
+#ifndef MICROPY_EMIT_MIPS32
+#define MICROPY_EMIT_MIPS32 (0)
+#endif
+
 // Whether to emit thumb native code
 #ifndef MICROPY_EMIT_THUMB
 #define MICROPY_EMIT_THUMB (0)
@@ -160,7 +165,7 @@
 #endif
 
 // Convenience definition for whether any native emitter is enabled
-#define MICROPY_EMIT_NATIVE (MICROPY_EMIT_X64 || MICROPY_EMIT_X86 || MICROPY_EMIT_THUMB || MICROPY_EMIT_ARM)
+#define MICROPY_EMIT_NATIVE (MICROPY_EMIT_X64 || MICROPY_EMIT_X86 || MICROPY_EMIT_MIPS32 || MICROPY_EMIT_THUMB || MICROPY_EMIT_ARM)
 
 /*****************************************************************************/
 /* Compiler configuration                                                    */
